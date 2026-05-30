@@ -41,42 +41,51 @@
         let angleZ = 0;
         
         const points = [];
-        const numPoints = 350; // จำนวนคำ ยิ่งเยอะยิ่งแน่นเป็นรูปหัวใจ
+        const numPoints = 400; // เพิ่มจำนวนคำให้รูปหัวใจแน่นและชัดขึ้น
 
-        // 1. คำนวณพิกัดหัวใจแบบ 3 มิติเตรียมไว้
+        // 1. สร้างพิกัดเริ่มต้นแบบกระจายฟุ้ง (Random) และพิกัดเป้าหมายที่เป็นรูปหัวใจ (Target)
         for (let i = 0; i < numPoints; i++) {
             let t = (i / numPoints) * Math.PI * 2;
             
-            let x = 16 * Math.pow(Math.sin(t), 3);
-            let y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-            
-            // สุ่มกระจายค่า Z ให้หนาเป็นทรงมิติขึ้นมา
-            let z = (Math.random() - 0.5) * 10 * Math.sin(t); 
+            // พิกัดเป้าหมายรูปหัวใจ 3D
+            let targetX = 16 * Math.pow(Math.sin(t), 3);
+            let targetY = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+            let targetZ = (Math.random() - 0.5) * 8 * Math.sin(t); 
 
-            points.push({ x: x, y: -y, z: z, id: i });
+            points.push({
+                // พิกัดปัจจุบัน (เริ่มจากลอยกระจายตัวอยู่ขอบๆ หรือสุ่มทั่วจอ)
+                x: (Math.random() - 0.5) * 150,
+                y: (Math.random() - 0.5) * 150,
+                z: (Math.random() - 0.5) * 100,
+                // เก็บค่าพิกัดเป้าหมายรูปหัวใจไว้
+                tx: targetX,
+                ty: targetY,
+                tz: targetZ,
+                id: i
+            });
         }
 
-        // 2. สร้างระบบละอองดาวฉากหลัง (Particles)
+        // 2. ระบบละอองดาวฉากหลัง
         const particles = [];
-        for(let i=0; i<100; i++) {
+        for(let i=0; i<80; i++) {
             particles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
                 size: Math.random() * 2,
-                speed: Math.random() * 0.5 + 0.2
+                speed: Math.random() * 0.4 + 0.1
             });
         }
 
         function draw() {
-            // เคลียร์หน้าจอแบบโปร่งแสงเล็กน้อยเพื่อให้เกิด Effect หางแสง (Motion Blur)
-            ctx.fillStyle = "rgba(5, 0, 5, 0.2)";
+            // เคลียร์หน้าจอพร้อมทำหางแสงละมุนๆ
+            ctx.fillStyle = "rgba(5, 0, 5, 0.25)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
             
-            // วาดละอองดาวฉากหลัง (แก้ไขโค้ดที่หลุดตรงนี้เรียบร้อยแล้ว)
-            ctx.fillStyle = "rgba(255, 150, 200, 0.5)";
+            // วาดละอองดาวเบื้องหลัง
+            ctx.fillStyle = "rgba(255, 160, 200, 0.4)";
             particles.forEach(p => {
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -87,7 +96,15 @@
 
             const scale = Math.min(canvas.width, canvas.height) * 0.015;
 
-            // คำนวณการหมุน 3D
+            // คำนวณการดึงดูด: ค่อยๆ ลอยขยับจากจุดสุ่มเข้าไปหาจุดที่เป็นรูปหัวใจ
+            points.forEach(p => {
+                // ใช้หลักการ Lerp (Linear Interpolation) ให้ค่อยๆ ลอยเข้าไปหาเป้าหมายอย่างนุ่มนวล
+                p.x += (p.tx - p.x) * 0.03;
+                p.y += (p.ty - p.y) * 0.03;
+                p.z += (p.tz - p.z) * 0.03;
+            });
+
+            // คำนวณการหมุน 3D หลังจากที่เริ่มรวมตัวกันแล้ว
             const projectedPoints = points.map(p => {
                 // หมุนแกน X
                 let y1 = p.y * Math.cos(angleX) - p.z * Math.sin(angleX);
@@ -109,25 +126,26 @@
                 };
             });
 
-            // เรียงลำดับจากลึกไปตื้น
+            // เรียงมิติมุมลึก-ตื้น
             projectedPoints.sort((a, b) => b.z - a.z);
 
-            // วาดตัวอักษรลงบน Canvas
+            // วาดข้อความ I love you ลงหน้าจอ
             projectedPoints.forEach(p => {
-                let fontSize = Math.max(6, 12 + (p.z * 0.3));
+                let fontSize = Math.max(5, 11 + (p.z * 0.25));
                 ctx.font = `bold ${fontSize}px Arial`;
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
 
-                let brightness = Math.floor(60 + (p.z * 2));
-                brightness = Math.max(20, Math.min(100, brightness));
+                let brightness = Math.floor(65 + (p.z * 1.8));
+                brightness = Math.max(30, Math.min(100, brightness));
                 
-                let hue = (p.id / numPoints) * 40 + 330; 
+                // เฉดสีชมพูนีออนไล่ไปหาแดงหวานๆ
+                let hue = (p.id / numPoints) * 35 + 335; 
                 
                 ctx.fillStyle = `hsl(${hue}, 100%, ${brightness}%)`;
                 
                 if(p.z > 0) {
-                    ctx.shadowBlur = 8;
+                    ctx.shadowBlur = 6;
                     ctx.shadowColor = `hsl(${hue}, 100%, 60%)`;
                 } else {
                     ctx.shadowBlur = 0;
@@ -136,10 +154,10 @@
                 ctx.fillText(TEXT, p.x, p.y);
             });
 
-            // ความเร็วในการหมุนแต่ละแกน
-            angleX += 0.005;
-            angleY += 0.015;
-            angleZ += 0.002;
+            // ปล่อยให้มันค่อยๆ หมุนไปเรื่อยๆ รอบตัว
+            angleX += 0.003;
+            angleY += 0.012;
+            angleZ += 0.001;
 
             requestAnimationFrame(draw);
         }
