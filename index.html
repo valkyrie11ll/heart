@@ -22,22 +22,72 @@
         canvas.height = window.innerHeight;
         
         let angle = 0;
-        const NUM_STEPS = 90; // เพิ่มจำนวนคำอีกนิดให้ล้อมรูปหัวใจวงใหญ่ได้เนียนตาขึ้น
-        const SCALE = 15;     // ปรับหัวใจให้ดวงใหญ่ขึ้นเต็มตา (เดิม 11)
+        const NUM_STEPS = 90; 
+        const SCALE = 15;     // หัวใจดวงโตเท่าเดิม
         const TEXT = "I love you viewvi"; 
 
         // สูตรคณิตศาสตร์รูปหัวใจดั้งเดิม
         function heartX(t) { return 16 * Math.pow(Math.sin(t), 3); }
         function heartY(t) { return 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t); }
 
+        // --- [ส่วนที่เพิ่มใหม่] สร้างระบบดาวหางสีชมพูฉากหลัง ---
+        const meteors = [];
+        const maxMeteors = 6; // จำนวนดาวหางที่ยอมให้แสดงพร้อมกันบนจอ
+
+        function createMeteor() {
+            return {
+                x: Math.random() * canvas.width,
+                y: Math.random() * (canvas.height * 0.4), // เริ่มจากช่วงครึ่งบนของจอ
+                length: Math.random() * 30 + 20,          // ความยาวหางดาวหาง
+                speed: Math.random() * 4 + 3,             // ความเร็วในการพุ่ง
+                size: Math.random() * 1.5 + 1             // ขนาดหัวดาวหาง
+            };
+        }
+
+        // เริ่มต้นสร้างดาวหางชุดแรก
+        for (let i = 0; i < maxMeteors; i++) {
+            meteors.push(createMeteor());
+        }
+        // ---------------------------------------------------
+
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // เคลียร์หน้าจอแบบผสมสีดำจางเล็กน้อย เพื่อให้ดาวหางมีแสงหางลากยาวเป็นเส้นสวยๆ
+            ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
-            
-            // -------------------------------------------------------------
-            // [ส่วนที่เพิ่มใหม่] วาดรูปหัวใจสีชมพูบางๆ เป็นพื้นหลังล่างสุด
-            // -------------------------------------------------------------
+
+            // ---------------------------------------------------
+            // [ส่วนที่เพิ่มใหม่] วาดและคำนวณตำแหน่งดาวหาง
+            // ---------------------------------------------------
+            meteors.forEach((m, index) => {
+                // วาดเส้นแสงหางดาวหางสีชมพู (ใช้ Gradient จางหายไปที่ปลายหาง)
+                let gradient = ctx.createLinearGradient(m.x, m.y, m.x - m.length, m.y - m.length);
+                gradient.addColorStop(0, "rgba(255, 182, 193, 1)"); // หัวสีชมพูชัด
+                gradient.addColorStop(1, "rgba(255, 105, 180, 0)"); // ปลายหางจางหายไป
+                
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = m.size;
+                ctx.beginPath();
+                ctx.moveTo(m.x, m.y);
+                ctx.lineTo(m.x - m.length, m.y - m.length);
+                ctx.stroke();
+
+                // ขยับตำแหน่งดาวหางให้พุ่งเฉียงลงด้านล่างซ้าย
+                m.x += m.speed;
+                m.y += m.speed;
+
+                // ถ้าดาวหางวิ่งทะลุขอบจอไป ให้รีเซ็ตกลับมาวิ่งใหม่
+                if (m.x > canvas.width || m.y > canvas.height) {
+                    meteors[index] = createMeteor();
+                    meteors[index].x = Math.random() * (canvas.width * 0.6) - 50;
+                    meteors[index].y = -20; // ให้ไปเริ่มใหม่ที่ขอบจอบนสุด
+                }
+            });
+            // ---------------------------------------------------
+
+            // วาดรูปหัวใจสีชมพูบางๆ เป็นพื้นหลังเงาซ้อน
             ctx.beginPath();
             for (let j = 0; j <= 200; j++) {
                 let tBg = (j / 200) * Math.PI * 2;
@@ -47,12 +97,11 @@
                 else ctx.lineTo(xBg, yBg);
             }
             ctx.closePath();
-            ctx.fillStyle = "rgba(255, 105, 180, 0.08)"; // สีชมพูจางๆ 8% โรแมนติกสุดๆ
+            ctx.fillStyle = "rgba(255, 105, 180, 0.08)"; 
             ctx.fill();
-            // -------------------------------------------------------------
 
             // วาดตัวอักษรวิ่งรอบหัวใจ
-            ctx.font = "bold 11px Arial";
+            ctx.font = "bold 22px Arial"; // [แก้ไขตามบรีฟ] ขยายขนาดฟอนต์ขึ้น 2 เท่า (เดิม 11px)
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
 
@@ -68,16 +117,5 @@
                 ctx.fillText(TEXT, x, y);
             }
             
-            angle += 0.007; // ปรับให้เคลื่อนไหวช้าลงอย่างนุ่มนวล (เดิม 0.015)
-            requestAnimationFrame(draw);
-        }
-
-        draw();
-
-        window.addEventListener("resize", () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-    </script>
-</body>
-</html>
+            angle += 0.007; // ความเร็วขยับแบบช้าเนิบละมุนตา
+            requestAnimationFrame(draw
