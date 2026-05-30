@@ -35,15 +35,15 @@
 
         // ระบบดาวหางสีชมพูฉากหลัง
         const meteors = [];
-        const maxMeteors = 6; 
+        const maxMeteors = 25; // [แก้ไข] เพิ่มปริมาณดาวหางเป็น 25 ดวงเต็มหน้าจอ
 
         function createMeteor() {
             return {
-                x: Math.random() * (canvas.width + 200) - 100,
-                y: Math.random() * (canvas.height * 0.5) - 50, 
-                length: Math.random() * 30 + 20,          
-                speed: Math.random() * 3 + 2,             
-                size: Math.random() * 1.5 + 1             
+                x: Math.random() * (canvas.width + 300) - 150,
+                y: Math.random() * (canvas.height * 0.7) - 100, // กระจายตัวจากด้านบนและตรงกลางจอ
+                length: Math.random() * 35 + 15,          
+                speed: Math.random() * 2 + 1.5,             
+                size: Math.random() * 1.5 + 0.8             
             };
         }
 
@@ -58,11 +58,11 @@
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
 
-            // วาดฝนดาวหางสีชมพู
+            // วาดฝนดาวหางสีชมพู (ปริมาณเยอะขึ้น)
             meteors.forEach((m) => {
                 ctx.beginPath();
                 let gradient = ctx.createLinearGradient(m.x, m.y, m.x - m.length, m.y - m.length);
-                gradient.addColorStop(0, "rgba(255, 182, 193, 1)"); 
+                gradient.addColorStop(0, "rgba(255, 192, 203, 1)"); 
                 gradient.addColorStop(1, "rgba(255, 105, 180, 0)"); 
                 
                 ctx.strokeStyle = gradient;
@@ -76,8 +76,8 @@
 
                 if (m.x > canvas.width + 50 || m.y > canvas.height + 50) {
                     Object.assign(m, createMeteor());
-                    m.y = -20;
-                    m.x = Math.random() * (canvas.width * 0.8);
+                    m.y = -30;
+                    m.x = Math.random() * (canvas.width * 0.9);
                 }
             });
 
@@ -109,7 +109,7 @@
                 ctx.fillText(TEXT, x, y);
             }
             
-            // [แก้ไข] เปลี่ยนค่าความเร็วเป็น 0.002 ตามที่ต้องการเรียบร้อยครับ
+            // ความเร็วใจเย็นๆ 0.002 เท่าเดิมตามที่ชอบครับ
             angle += 0.002; 
             requestAnimationFrame(draw);
         }
