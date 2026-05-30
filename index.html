@@ -118,4 +118,15 @@
             }
             
             angle += 0.007; // ความเร็วขยับแบบช้าเนิบละมุนตา
-            requestAnimationFrame(draw
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
