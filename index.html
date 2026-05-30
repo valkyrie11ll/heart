@@ -3,23 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Heart for You</title>
+    <title>For My Viewvi</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: #050005; 
-            overflow: hidden; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-        }
-        canvas { 
-            display: block; 
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
+        body { background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        canvas { display: block; }
     </style>
 </head>
 <body>
@@ -33,160 +21,44 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         
-        const TEXT = "I love you"; 
-        
-        let angleX = 0;
-        let angleY = 0;
-        let angleZ = 0;
-        
-        // ตัวแปรควบคุมการเริ่มหมุน (จะเริ่มหมุนเมื่อรวมตัวใกล้เสร็จ)
-        let startRotation = false;
-        let assembleProgress = 0;
+        let angle = 0;
+        const NUM_STEPS = 80; // ปรับเพิ่มจำนวนคำนิดหน่อยเพื่อให้หัวใจดูแน่นขึ้นครับ
+        const SCALE = 11;     // ขนาดของหัวใจ
+        const TEXT = "I love you viewvi"; // เปลี่ยนเป็นชื่อหวานใจเรียบร้อย
 
-        const points = [];
-        const numPoints = 450; // เพิ่มจำนวนคำให้หนาแน่นจนเห็นรูปทรงหัวใจชัดเจนที่สุด
-
-        // 1. กำหนดพิกัดให้ชัดเจน
-        for (let i = 0; i < numPoints; i++) {
-            let t = (i / numPoints) * Math.PI * 2;
-            
-            // พิกัดรูปหัวใจที่ถูกต้องตามสูตรคณิตศาสตร์
-            let targetX = 16 * Math.pow(Math.sin(t), 3);
-            let targetY = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
-            let targetZ = (Math.random() - 0.5) * 5; // ให้มิติหนากำลังดี ไม่เหวี่ยงหลุดทรง
-
-            points.push({
-                // เริ่มต้นสุ่มให้กระจายอยู่ไกลๆ รอบหน้าจอ (เหมือนเศษละอองดาว)
-                x: (Math.random() - 0.5) * window.innerWidth * 0.8,
-                y: (Math.random() - 0.5) * window.innerHeight * 0.8,
-                z: (Math.random() - 0.5) * 200,
-                tx: targetX,
-                ty: targetY,
-                tz: targetZ,
-                id: i
-            });
-        }
-
-        // ระบบดาวส่องสว่างข้างหลัง
-        const particles = [];
-        for(let i=0; i<60; i++) {
-            particles.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: Math.random() * 1.5,
-                speed: Math.random() * 0.3 + 0.1
-            });
-        }
+        // สูตรคณิตศาสตร์รูปหัวใจดั้งเดิมแบบโค้ดแรก
+        function heartX(t) { return 16 * Math.pow(Math.sin(t), 3); }
+        function heartY(t) { return 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t); }
 
         function draw() {
-            ctx.fillStyle = "rgba(5, 0, 5, 0.25)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
             
-            // วาดละอองดาวหลังเบลอ
-            ctx.fillStyle = "rgba(255, 160, 200, 0.3)";
-            particles.forEach(p => {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
-                p.y -= p.speed;
-                if(p.y < 0) p.y = canvas.height;
-            });
+            ctx.font = "bold 11px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
 
-            // ปรับ Scale ตัวหัวใจให้พอดีหน้าจอ
-            const scale = Math.min(canvas.width, canvas.height) * 0.016;
+            for (let i = 0; i < NUM_STEPS; i++) {
+                // คำนวณมุม t ให้สอดคล้องกับตัวแปร angle เพื่อให้หัวใจเต้น/ขยับได้ละมุนๆ
+                let t = (i / NUM_STEPS) * Math.PI * 2 + angle;
+                
+                let x = cx + heartX(t) * SCALE;
+                let y = cy - heartY(t) * SCALE; // กลับค่า Y ขึ้นข้างบนเพื่อไม่ให้หัวใจคว่ำ
 
-            //นับเวลาถอยหลังการรวมตัว
-            assembleProgress += 0.005; 
-
-            // 2. คำนวณการเคลื่อนที่มารวมกัน
-            points.forEach(p => {
-                // ค่อยๆ ดึงพิกัดปัจจุบันเข้าหาพิกัดหัวใจ (Target)
-                p.x += (p.tx - p.x) * 0.04;
-                p.y += (p.ty - p.y) * 0.04;
-                p.z += (p.tz - p.z) * 0.04;
-            });
-
-            // ถ้าเวลาผ่านไปสักพัก (ใกล้รวมเสร็จ) ให้เริ่มเปิดระบบหมุน 3D
-            if (assembleProgress > 0.8) {
-                startRotation = true;
+                // ไล่เฉดสีชมพู-แดงนีออน (HSL) หวานๆ
+                ctx.fillStyle = `hsl(${(i / NUM_STEPS) * 35 + 335}, 100%, 60%)`;
+                
+                ctx.fillText(TEXT, x, y);
             }
-
-            // 3. แปลงพิกัดเป็น 3D Perspective
-            const projectedPoints = points.map(p => {
-                let x = p.x;
-                let y = p.y;
-                let z = p.z;
-
-                // จะหมุนแกนก็ต่อเมื่อรวมร่างกันเป็นหัวใจเสร็จแล้วเท่านั้น เพื่อไม่ให้รูปทรงแตกกระจาย
-                if (startRotation) {
-                    // หมุนแกน X
-                    let y1 = y * Math.cos(angleX) - z * Math.sin(angleX);
-                    let z1 = y * Math.sin(angleX) + z * Math.cos(angleX);
-                    
-                    // หมุนแกน Y
-                    let x2 = x * Math.cos(angleY) + z1 * Math.sin(angleY);
-                    let z2 = -x * Math.sin(angleY) + z1 * Math.cos(angleY);
-                    
-                    x = x2;
-                    y = y1;
-                    z = z2;
-                }
-                
-                const distance = 40;
-                const fov = 350;
-                const f = fov / (distance + z);
-                
-                return {
-                    x: cx + x * scale * f,
-                    y: cy + y * scale * f,
-                    z: z,
-                    id: p.id
-                };
-            });
-
-            // เรียงลำดับมิติตื้นลึก
-            projectedPoints.sort((a, b) => b.z - a.z);
-
-            // 4. วาดตัวอักษรลงบนจอ
-            projectedPoints.forEach(p => {
-                let fontSize = Math.max(5, 11 + (p.z * 0.2));
-                ctx.font = `bold ${fontSize}px Arial`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-
-                let brightness = Math.floor(65 + (p.z * 1.5));
-                brightness = Math.max(40, Math.min(100, brightness));
-                
-                // ไล่โทนสีชมพู-แดงวาเลนไทน์
-                let hue = (p.id / numPoints) * 30 + 335; 
-                ctx.fillStyle = `hsl(${hue}, 100%, ${brightness}%)`;
-                
-                // เปิดเงาเรืองแสงนีออนเพิ่มความสวยงาม
-                if(p.z > -5) {
-                    ctx.shadowBlur = 5;
-                    ctx.shadowColor = `hsl(${hue}, 100%, 60%)`;
-                } else {
-                    ctx.shadowBlur = 0;
-                }
-
-                ctx.fillText(TEXT, p.x, p.y);
-            });
-
-            // ตัวควบคุมความเร็วในการหมุนหลังจากรวมร่างเสร็จ
-            if (startRotation) {
-                angleX += 0.003;
-                angleY += 0.010; // หมุนหมุนรอบตัวเองแนวนอน
-                angleZ += 0.001;
-            }
-
+            
+            angle += 0.015; // ความเร็วในการขยับเยื้องของตัวอักษร
             requestAnimationFrame(draw);
         }
 
         draw();
 
+        // รองรับการเปิดในมือถือของแฟน ถ้าหมุนจอก็จะยังอยู่ตรงกลาง
         window.addEventListener("resize", () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
